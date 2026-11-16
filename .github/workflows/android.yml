@@ -1,1 +1,51 @@
+name: Build Xash3D Android
 
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'android/**'
+      - 'engine/**'
+      - 'common/**'
+      - '3rdparty/**'
+      - 'scripts/**'
+      - '.github/workflows/android.yml'
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            openjdk-17-jdk \
+            git \
+            wget \
+            unzip \
+            python3 \
+            build-essential
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build Android engine
+        run: |
+          bash scripts/gha/deps_android.sh
+          bash scripts/gha/build_android.sh
+
+      - name: Upload build files
+        uses: actions/upload-artifact@v4
+        with:
+          name: xash3d-android-build
+          path: artifacts/*
+          if-no-files-found: error
