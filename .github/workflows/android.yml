@@ -3,49 +3,42 @@ name: Build Xash3D Android
 on:
   workflow_dispatch:
   push:
-    paths:
-      - 'android/**'
-      - 'engine/**'
-      - 'common/**'
-      - '3rdparty/**'
-      - 'scripts/**'
-      - '.github/workflows/android.yml'
+    branches:
+      - master
+
+permissions:
+  contents: read
 
 jobs:
-  build-android:
+  build:
+    name: Android Multiarch
     runs-on: ubuntu-latest
 
+    env:
+      SDL_VERSION: '2.32.10'
+      FFMPEG_VERSION: '9.0'
+      YY_THUNKS_VERSION: 'v1.2.1'
+      SAILFISH_SDK_VERSION: '3.13.5'
+      SAILFISH_TARGET_VERSION: '5.1.0.11'
+      GH_CPU_ARCH: multiarch
+      GH_CPU_OS: android
+      GH_CROSSCOMPILING: 'false'
+
     steps:
-      - name: Download source
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
       - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            openjdk-17-jdk \
-            git \
-            wget \
-            unzip \
-            python3 \
-            build-essential
+        run: bash scripts/gha/deps_android.sh
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - name: Build engine
+        run: bash scripts/gha/build_android.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
         with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Build Android engine
-        run: |
-          bash scripts/gha/deps_android.sh
-          bash scripts/gha/build_android.sh
-
-      - name: Upload build files
-        uses: actions/upload-artifact@v4
-        with:
-          name: xash3d-android-build
+          name: xash3d-android
           path: artifacts/*
           if-no-files-found: error
